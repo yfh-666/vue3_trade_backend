@@ -14,7 +14,7 @@
 + [项目前端地址](https://gitee.com/falle22222n-leaves/vue3_trade_frontend)
 + [项目后端地址](https://gitee.com/falle22222n-leaves/vue3_trade_backend)
 
-[![star](https://gitee.com/falle22222n-leaves/vue3_trade_backend/badge/star.svg?theme=dark)](https://gitee.com/falle22222n-leaves/vue_-book-manage-system)  [![gitee](https://badgen.net/badge/gitee/falle22222n-leaves/red)](https://gitee.com/falle22222n-leaves)  [![github](https://badgen.net/badge/github/github?icon)](https://github.com/luoye6)
+[![star](https://gitee.com/luoye6/vue3_trade_frontend/badge/star.svg?theme=dark)](https://gitee.com/falle22222n-leaves/vue_-book-manage-system)  [![gitee](https://badgen.net/badge/gitee/falle22222n-leaves/red)](https://gitee.com/falle22222n-leaves)  [![github](https://badgen.net/badge/github/github?icon)](https://github.com/luoye6)
 
 ## ☀️个人介绍
 
