@@ -1,10 +1,6 @@
 package com.xiaobaitiao.springbootinit.constant;
 
-/**
- * @author 程序员小白条
- * @date 2025/1/31 14:49
- * @gitee https://gitee.com/falle22222n-leaves/vue_-book-manage-system
- */
+
 public interface QuestionConstant {
     /**
      * 简单
