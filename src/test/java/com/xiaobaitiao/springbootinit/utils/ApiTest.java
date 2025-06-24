@@ -1,4 +1,4 @@
-package com.xiaobaitiao.springbootinit.utils;
+/*package com.xiaobaitiao.springbootinit.utils;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
@@ -60,4 +60,4 @@ public class ApiTest {
         MoonshotAiUtils.chat("moonshot-v1-8k",messages);
     }
 
-}
+}*/

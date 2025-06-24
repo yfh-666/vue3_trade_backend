@@ -26,6 +26,8 @@ import com.xiaobaitiao.springbootinit.model.vo.UserAiMessageVO;
 import com.xiaobaitiao.springbootinit.service.CommodityService;
 import com.xiaobaitiao.springbootinit.service.UserAiMessageService;
 import com.xiaobaitiao.springbootinit.service.UserService;
+import com.xiaobaitiao.springbootinit.utils.IntentClassifier;
+import com.xiaobaitiao.springbootinit.utils.PromptSelector;
 import com.xiaobaitiao.springbootinit.utils.WordUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -42,6 +44,8 @@ import java.util.stream.Collectors;
 /**
  * 用户对话表接口
  *
+ * @author 程序员小白条
+ * @from <a href="https://luoye6.github.io/"> 个人博客
  */
 @RestController
 @RequestMapping("/userAiMessage")
@@ -60,9 +64,9 @@ public class UserAiMessageController {
     SparkClient sparkClient = new SparkClient();
 
     {
-        sparkClient.appid = "xxxxxxxxxxxx";
-        sparkClient.apiKey = "xxxxxxxxxxxx";
-        sparkClient.apiSecret = "xxxxxxxxxxxx";
+        sparkClient.appid = "dda26aeb";
+        sparkClient.apiKey = "ffc193c2bcdc0ed5411531e952eff967";
+        sparkClient.apiSecret = "ZDJkZjkyMmRhNjMyNWQ2NTRiYzA3NjI1";
     }
 
     // region 增删改查
@@ -89,7 +93,7 @@ public class UserAiMessageController {
         ThrowUtils.throwIf(aiRemainNumber <= 0, ErrorCode.USER_BALANCE_NOT_ENOUGH);
         userAiMessage.setUserId(loginUser.getId());
         userAiMessage.setUserInputText(userInputText);
-        String presetInformation = "你是一个二手商品交易推荐官，你需要根据数据库的商品名称、价格、新旧程度、库存、用户的现有余额、用户的偏好等多方面进行适配性推荐，并给出相关的理由。\n";
+       /* String presetInformation = "";
         String userText = "用户偏好信息：" + userInputText+"\n";
         // 使用 Stream 处理数据
         String commodityList = commodityService.list().stream()
@@ -104,9 +108,20 @@ public class UserAiMessageController {
                 .collect(Collectors.joining("\n")); // 用换行符拼接每条商品信息
         String commodityInfo = "数据库商品信息如下："+commodityList+"\n";
         BigDecimal balance = loginUser.getBalance();
-        String userInfo = "用户相关信息如下，"+"用户余额："+balance+"\n";
+        String userInfo = "用户相关信息如下，"+"用户余额："+balance+"\n";*/
+
+        // 基于规则的意图识别 + Prompt 构造
+        List<Commodity> commodities = commodityService.list();
+        IntentClassifier.Intent intent = IntentClassifier.classify(userInputText);
+        String prompt = PromptSelector.buildPrompt(intent, userInputText, commodities, loginUser);
+
         List<SparkMessage> messages = new ArrayList<>();
-        messages.add(SparkMessage.userContent(presetInformation + userText+commodityInfo+userInfo));
+        messages.add(SparkMessage.userContent(prompt));
+/*
+        List<SparkMessage> messages = new ArrayList<>();
+        String simplePrompt = userInputText;
+        messages.add(SparkMessage.userContent(simplePrompt));
+*/
         String response = "";
         int timeout = 35; // 超时时间，单位为秒
         // 构造请求

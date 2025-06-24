@@ -1,4 +1,6 @@
 # 线上配置文件
+# @author 程序员小白条
+# @from <a href="https://luoye6.github.io/"> 个人博客
 server:
   port: 8102
 spring:
@@ -8,7 +10,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/test_db_xbt
     username: root
-    password: 123456
+    password: hsp
   # Redis 配置
   # todo 需替换配置
   redis:

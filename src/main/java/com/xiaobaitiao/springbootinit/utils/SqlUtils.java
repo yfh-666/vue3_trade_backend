@@ -2,7 +2,12 @@ package com.xiaobaitiao.springbootinit.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
-
+/**
+ * SQL 工具
+ *
+ * @author 程序员小白条
+ * @from <a href="https://luoye6.github.io/"> 个人博客
+ */
 public class SqlUtils {
 
     /**

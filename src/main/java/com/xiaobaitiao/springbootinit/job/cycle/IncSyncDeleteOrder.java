@@ -12,7 +12,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
+/**
+ * @author 程序员小白条
+ * @date 2025/3/12 15:32
+ * @gitee https://gitee.com/falle22222n-leaves/vue_-book-manage-system
+ */
 @Component
 @Slf4j
 public class IncSyncDeleteOrder {

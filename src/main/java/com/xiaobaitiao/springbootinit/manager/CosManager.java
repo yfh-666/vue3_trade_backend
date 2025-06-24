@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 /**
  * Cos 对象存储操作
  *
+ * @author 程序员小白条
+ * @from <a href="https://luoye6.github.io/"> 个人博客
  */
 @Component
 public class CosManager {
