@@ -51,6 +51,8 @@ public class CommodityOrder implements Serializable {
      */
     private Integer payStatus;
 
+    
+
     /**
      * 创建时间
      */

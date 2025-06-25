@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xiaobaitiao.springbootinit.model.dto.commodity.CommodityQueryRequest;
 import com.xiaobaitiao.springbootinit.model.entity.Commodity;
+import com.xiaobaitiao.springbootinit.model.entity.User;
 import com.xiaobaitiao.springbootinit.model.vo.CommodityVO;
 
 import javax.servlet.http.HttpServletRequest;

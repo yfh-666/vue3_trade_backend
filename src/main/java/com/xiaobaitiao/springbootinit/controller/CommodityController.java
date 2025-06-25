@@ -57,6 +57,8 @@ public class CommodityController {
     private CommodityOrderService commodityOrderService;
     // region 增删改查
 
+
+
     /**
      * 创建商品表
      *
@@ -65,23 +67,36 @@ public class CommodityController {
      * @return
      */
     @PostMapping("/add")
-    public BaseResponse<Long> addCommodity(@RequestBody CommodityAddRequest commodityAddRequest, HttpServletRequest request) {
-        ThrowUtils.throwIf(commodityAddRequest == null, ErrorCode.PARAMS_ERROR);
-        // todo 在此处将实体类和 DTO 进行转换
+    public BaseResponse<Long> addCommodity(@RequestBody CommodityAddRequest commodityAddRequest,
+                                           HttpServletRequest request) {
+        if (commodityAddRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        User loginUser = userService.getLoginUser(request);
+
         Commodity commodity = new Commodity();
         BeanUtils.copyProperties(commodityAddRequest, commodity);
-        // 数据校验
-        commodityService.validCommodity(commodity, true);
-        // todo 填充默认值
-        User loginUser = userService.getLoginUser(request);
-        commodity.setAdminId(loginUser.getId());
-        // 写入数据库
-        boolean result = commodityService.save(commodity);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        // 返回新写入的数据 id
-        long newCommodityId = commodity.getId();
-        return ResultUtils.success(newCommodityId);
+
+        // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+        if (!userService.isAdmin(loginUser)) {
+            // 普通用户：默认未上架，记录发布者
+            commodity.setIsListed(0);
+            commodity.setSubmitUserId(loginUser.getId());
+            // 管理员字段可以设为 0 或 NULL 占位
+            commodity.setAdminId(5L);
+        } else {
+            // 管理员：允许手动设置上架
+            commodity.setAdminId(loginUser.getId());
+        }
+        // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+        boolean saveResult = commodityService.save(commodity);
+        ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR);
+
+        return ResultUtils.success(commodity.getId());
     }
+
 
     /**
      * 删除商品表

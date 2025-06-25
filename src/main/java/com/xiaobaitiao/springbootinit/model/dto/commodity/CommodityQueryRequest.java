@@ -75,4 +75,11 @@ public class CommodityQueryRequest extends PageRequest implements Serializable {
     private Integer favourNum;
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 当前登录用户 ID（用于只看自己发布的商品）
+     */
+    private Long submitUserId;
+
+
 }

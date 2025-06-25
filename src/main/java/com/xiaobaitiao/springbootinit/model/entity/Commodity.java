@@ -96,4 +96,10 @@ public class Commodity implements Serializable {
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 发布人用户 ID（仅用户发布的商品用）
+     */
+    private Long submitUserId;
+
 }
