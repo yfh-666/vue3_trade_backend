@@ -229,6 +229,104 @@ public class CommodityController {
         return ResultUtils.success(commodityService.getCommodityVOPage(commodityPage, request));
     }
 
+
+
+
+
+
+    @PostMapping("/my/list/page")
+    public BaseResponse<Page<CommodityVO>> listMyCommodityByPage(@RequestBody CommodityQueryRequest commodityQueryRequest,
+                                                                 HttpServletRequest request) {
+        if (commodityQueryRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        User loginUser = userService.getLoginUser(request);
+        commodityQueryRequest.setSubmitUserId(loginUser.getId());
+
+        long current = commodityQueryRequest.getCurrent();
+        long size = commodityQueryRequest.getPageSize();
+
+        Page<Commodity> commodityPage = commodityService.page(
+                new Page<>(current, size),
+                commodityService.getQueryWrapper(commodityQueryRequest)
+        );
+
+        return ResultUtils.success(commodityService.getCommodityVOPage(commodityPage, request));
+    }
+    @PostMapping("/my/add")
+    public BaseResponse<Long> addMyCommodity(@RequestBody CommodityAddRequest commodityAddRequest,
+                                             HttpServletRequest request) {
+        if (commodityAddRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        User loginUser = userService.getLoginUser(request);
+        Commodity commodity = new Commodity();
+        BeanUtils.copyProperties(commodityAddRequest, commodity);
+
+        commodity.setSubmitUserId(loginUser.getId());
+        commodity.setIsListed(0);        // 默认不允许用户自己上架
+        commodity.setAdminId(5L);        // 设定为系统默认管理员
+
+        boolean result = commodityService.save(commodity);
+        if (!result) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR);
+        }
+
+        return ResultUtils.success(commodity.getId());
+    }
+    @PostMapping("/my/update")
+    public BaseResponse<Boolean> updateMyCommodity(@RequestBody CommodityUpdateRequest updateRequest,
+                                                   HttpServletRequest request) {
+        if (updateRequest == null || updateRequest.getId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        User loginUser = userService.getLoginUser(request);
+        Commodity oldCommodity = commodityService.getById(updateRequest.getId());
+
+        if (oldCommodity == null || !oldCommodity.getSubmitUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+
+        // 不允许用户修改 isListed 和 adminId
+        updateRequest.setIsListed(null);
+        updateRequest.setAdminId(5L);
+
+        Commodity updated = new Commodity();
+        BeanUtils.copyProperties(updateRequest, updated);
+
+        boolean result = commodityService.updateById(updated);
+        return ResultUtils.success(result);
+    }
+   /* @PostMapping("/my/delete")
+    public BaseResponse<Boolean> deleteMyCommodity(@RequestBody IdRequest idRequest,
+                                                   HttpServletRequest request) {
+        if (idRequest == null || idRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        User loginUser = userService.getLoginUser(request);
+        Commodity commodity = commodityService.getById(idRequest.getId());
+
+        if (commodity == null || !commodity.getSubmitUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+
+        commodity.setIsDelete(1);
+        boolean result = commodityService.updateById(commodity);
+        return ResultUtils.success(result);
+    }
+*/
+
+
+
+
+
+
+
+
     /**
      * 编辑商品表（给用户使用）
      *
