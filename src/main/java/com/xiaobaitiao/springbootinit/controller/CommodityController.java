@@ -115,9 +115,9 @@ public class CommodityController {
         Commodity oldCommodity = commodityService.getById(id);
         ThrowUtils.throwIf(oldCommodity == null, ErrorCode.NOT_FOUND_ERROR);
         // 仅管理员可删除
-        if (!userService.isAdmin(request)) {
+       /* if (!userService.isAdmin(request)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
+        }*/
         // 操作数据库
         boolean result = commodityService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
