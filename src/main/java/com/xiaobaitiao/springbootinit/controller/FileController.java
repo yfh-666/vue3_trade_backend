@@ -67,7 +67,9 @@ public class FileController {
             // 上传文件
             file = File.createTempFile(filepath, null);
             multipartFile.transferTo(file);
-            cosManager.putObject(filepath, file);
+            String contentType = multipartFile.getContentType();
+            cosManager.putObject(filepath, file, contentType);
+
             // 返回可访问地址
             return ResultUtils.success(FileConstant.COS_HOST + filepath);
         } catch (Exception e) {
