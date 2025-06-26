@@ -530,14 +530,15 @@ public class CommodityController {
      */
     @GetMapping("/commodityRecommendation")
     public BaseResponse<List<Commodity>> recommendCommodities(@RequestParam Long userId) {
-
-        // 1. 获取用户评分数据
+        // 1. 获取当前用户评分数据
         LambdaQueryWrapper<CommodityScore> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(CommodityScore::getUserId,userId);
+        queryWrapper.eq(CommodityScore::getUserId, userId);
         List<CommodityScore> userScores = commodityScoreService.list(queryWrapper);
+        System.out.println("用户评分记录数量：" + userScores.size());
 
-        // 2. 获取所有商品的评分数据
+        // 2. 获取所有评分数据
         List<CommodityScore> allScores = commodityScoreService.list();
+        System.out.println("所有评分记录数量：" + allScores.size());
 
         // 3. 构建用户-商品评分矩阵
         Map<Long, Map<Long, Integer>> userCommodityRatingMap = new HashMap<>();
@@ -549,15 +550,64 @@ public class CommodityController {
 
         // 4. 计算商品相似度
         Map<Long, Double> commoditySimilarityMap = calculateCommoditySimilarity(userScores, userCommodityRatingMap);
+        System.out.println("相似度计算结果：" + commoditySimilarityMap);
 
-        // 5. 推荐商品
+        // 5. 推荐商品 ID（按相似度排序）
         List<Long> recommendedCommodityIds = recommendCommodities(userScores, commoditySimilarityMap);
-        if(recommendedCommodityIds.isEmpty()){
-            return ResultUtils.error(ErrorCode.PARAMS_ERROR,"您还未购买或完成评分商品的行为，暂时无法推荐");
+        System.out.println("初步推荐商品 ID：" + recommendedCommodityIds);
+
+        // 6. 扩展：基于商品类别推荐同类高评分商品
+        Set<Long> ratedTypeIds = userScores.stream()
+                .filter(score -> score.getScore() >= 3)
+                .map(score -> commodityService.getById(score.getCommodityId()))
+                .filter(Objects::nonNull)
+                .map(Commodity::getCommodityTypeId)
+                .collect(Collectors.toSet());
+
+        List<Commodity> categoryCommodities = new ArrayList<>();
+        for (Long typeId : ratedTypeIds) {
+            LambdaQueryWrapper<Commodity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Commodity::getCommodityTypeId, typeId).eq(Commodity::getIsDelete, 0);
+            List<Commodity> commodities = commodityService.list(wrapper);
+            for (Commodity c : commodities) {
+                Double avgScore = commodityScoreService.getAverageScoreBySpotId(c.getId());
+                if (avgScore != null && avgScore >= 3) {
+                    categoryCommodities.add(c);
+                }
+            }
         }
-        // 6. 查询推荐商品的详细信息
-        return ResultUtils.success(commodityService.listByIds(recommendedCommodityIds));
+
+        // 7. 合并推荐结果（去重）
+        Set<Long> finalIds = new LinkedHashSet<>(recommendedCommodityIds);
+        finalIds.addAll(categoryCommodities.stream().map(Commodity::getId).collect(Collectors.toSet()));
+
+        // 8. 再次过滤：平均评分 ≥ 3
+        List<Long> filteredIds = finalIds.stream()
+                .filter(id -> {
+                    Double avg = commodityScoreService.getAverageScoreBySpotId(id);
+                    System.out.println("商品 " + id + " 的平均评分：" + avg);
+                    return avg != null && avg >= 3;
+                })
+                .limit(5) // 限制最多 5 个
+                .collect(Collectors.toList());
+
+        System.out.println("最终推荐商品 ID 列表（最多 5 个）：" + filteredIds);
+
+        if (filteredIds.isEmpty()) {
+            return ResultUtils.error(ErrorCode.OPERATION_ERROR, "暂无合适的推荐商品");
+        }
+
+        // 9. 查询并返回商品详情
+        List<Commodity> result = commodityService.listByIds(filteredIds);
+        for (Commodity commodity : result) {
+            System.out.println("推荐商品：ID=" + commodity.getId() + "，名称=" + commodity.getCommodityName() + "，类型ID=" + commodity.getCommodityTypeId());
+        }
+
+        return ResultUtils.success(result);
     }
+
+
+
 
     /**
      * 计算商品相似度（基于余弦相似度）
@@ -568,18 +618,12 @@ public class CommodityController {
      */
     private Map<Long, Double> calculateCommoditySimilarity(List<CommodityScore> userScores, Map<Long, Map<Long, Integer>> userCommodityRatingMap) {
         Map<Long, Double> similarityMap = new HashMap<>();
+        Set<Long> ratedCommodityIds = userScores.stream().map(CommodityScore::getCommodityId).collect(Collectors.toSet());
 
-        // 获取用户评分过的商品 ID
-        Set<Long> ratedCommodityIds = userScores.stream()
-                .map(CommodityScore::getCommodityId)
-                .collect(Collectors.toSet());
-
-        // 计算每个商品与用户评分过的商品的相似度
         for (Long commodityId : ratedCommodityIds) {
             double similarity = calculateCosineSimilarity(commodityId, userScores, userCommodityRatingMap);
             similarityMap.put(commodityId, similarity);
         }
-
         return similarityMap;
     }
 
@@ -592,7 +636,6 @@ public class CommodityController {
      * @return 相似度值
      */
     private double calculateCosineSimilarity(Long commodityId, List<CommodityScore> userScores, Map<Long, Map<Long, Integer>> userCommodityRatingMap) {
-        // 1. 获取目标商品的评分向量
         Map<Long, Integer> targetCommodityRatings = new HashMap<>();
         for (CommodityScore score : userScores) {
             if (score.getCommodityId().equals(commodityId)) {
@@ -600,30 +643,20 @@ public class CommodityController {
             }
         }
 
-        // 2. 遍历所有商品，计算与目标商品的相似度
-        double dotProduct = 0.0; // 点积
-        double targetNorm = 0.0; // 目标商品的向量模
-        double otherNorm = 0.0;  // 其他商品的向量模
-
+        double dotProduct = 0.0, targetNorm = 0.0, otherNorm = 0.0;
         for (Map.Entry<Long, Map<Long, Integer>> entry : userCommodityRatingMap.entrySet()) {
             Long userId = entry.getKey();
             Map<Long, Integer> ratings = entry.getValue();
-
-            // 获取目标商品和当前商品的评分
             Integer targetRating = targetCommodityRatings.get(userId);
             Integer otherRating = ratings.get(commodityId);
-
             if (targetRating != null && otherRating != null) {
-                dotProduct += targetRating * otherRating; // 累加点积
-                targetNorm += Math.pow(targetRating, 2);  // 累加目标商品向量的平方
-                otherNorm += Math.pow(otherRating, 2);   // 累加其他商品向量的平方
+                dotProduct += targetRating * otherRating;
+                targetNorm += Math.pow(targetRating, 2);
+                otherNorm += Math.pow(otherRating, 2);
             }
         }
 
-        // 3. 计算余弦相似度
-        if (targetNorm == 0 || otherNorm == 0) {
-            return 0.0; // 避免除零错误
-        }
+        if (targetNorm == 0 || otherNorm == 0) return 0.0;
         return dotProduct / (Math.sqrt(targetNorm) * Math.sqrt(otherNorm));
     }
 
@@ -635,11 +668,10 @@ public class CommodityController {
      * @return 推荐的商品 ID 列表
      */
     private List<Long> recommendCommodities(List<CommodityScore> userScores, Map<Long, Double> commoditySimilarityMap) {
-        // 根据相似度排序，推荐相似度高的商品
         return commoditySimilarityMap.entrySet().stream()
-                .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue())) // 按相似度降序排序
+                .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
-    // endregion
+
 }
