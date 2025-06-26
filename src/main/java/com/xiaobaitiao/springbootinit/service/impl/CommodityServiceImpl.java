@@ -96,6 +96,10 @@ public class CommodityServiceImpl extends ServiceImpl<CommodityMapper, Commodity
         queryWrapper.eq(ObjectUtils.isNotEmpty(adminId), "adminId", adminId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(commodityInventory), "commodityInventory", commodityInventory);
         queryWrapper.eq(ObjectUtils.isNotEmpty(isListed), "isListed", isListed);
+
+        queryWrapper.eq(ObjectUtils.isNotEmpty(commodityQueryRequest.getSubmitUserId()),
+                "submitUserId", commodityQueryRequest.getSubmitUserId());
+
         // 排序规则
         queryWrapper.orderBy(SqlUtils.validSortField(sortField),
                 sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
