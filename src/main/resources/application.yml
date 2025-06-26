@@ -86,13 +86,13 @@ wx:
 # todo 需替换配置
 
 
-cos:
-  client:
-    accessKey: AKIDVwBD2e3EB8rNm491g8MM8h9NOIzUmriM
-    secretKey: Wo03tVu54pPmwsa5NSJySkqkRu9A1mKg
-    region: ap-guangzhou
-    bucket: zjh1204-1364876328
-    host: https://zjh1204-1364876328.cos.ap-guangzhou.myqcloud.com
+# cos:
+#   client:
+#     accessKey: AKIDVwBD2e3EB8rNm491g8MM8h9NOIzUmriM
+#     secretKey: Wo03tVu54pPmwsa5NSJySkqkRu9A1mKg
+#     region: ap-guangzhou
+#     bucket: zjh1204-1364876328
+#     host: https://zjh1204-1364876328.cos.ap-guangzhou.myqcloud.com
 # 接口文档配置
 
 knife4j:
