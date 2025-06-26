@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaobaitiao.springbootinit.common.ErrorCode;
+import com.xiaobaitiao.springbootinit.common.JwtKit;
 import com.xiaobaitiao.springbootinit.constant.CommonConstant;
 import com.xiaobaitiao.springbootinit.exception.BusinessException;
 import com.xiaobaitiao.springbootinit.mapper.UserMapper;
@@ -16,6 +17,7 @@ import com.xiaobaitiao.springbootinit.model.vo.LoginUserVO;
 import com.xiaobaitiao.springbootinit.model.vo.UserVO;
 import com.xiaobaitiao.springbootinit.service.UserService;
 import com.xiaobaitiao.springbootinit.utils.SqlUtils;
+import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +25,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,22 +153,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param request
      * @return
      */
+    @Resource
+    private JwtKit jwtKit;
+
     @Override
     public User getLoginUser(HttpServletRequest request) {
-        // 先判断是否已登录
+        // 优先从 Session 中取
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        User currentUser = (User) userObj;
-        if (currentUser == null || currentUser.getId() == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        if (userObj instanceof User) {
+            User sessionUser = (User) userObj;
+            if (sessionUser.getId() != null) {
+                return this.getById(sessionUser.getId());
+            }
         }
-        // 从数据库查询（追求性能的话可以注释，直接走缓存）
-        long userId = currentUser.getId();
-        currentUser = this.getById(userId);
-        if (currentUser == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+
+        // 从 Authorization 头中解析 JWT
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            try {
+                // 通过 JwtKit 工具类解析 token
+                Claims claims = jwtKit.parseJwtToken(token); // ✅
+
+                Object userIdObj = claims.get("id");
+                if (userIdObj != null) {
+                    Long userId = Long.parseLong(userIdObj.toString());
+                    return this.getById(userId);
+                }
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "Token 无效或已过期");
+            }
         }
-        return currentUser;
+
+        throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "未登录");
     }
+
 
     /**
      * 获取当前登录用户（允许未登录）

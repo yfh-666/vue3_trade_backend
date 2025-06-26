@@ -14,7 +14,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class AuthInterceptorConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(authInterceptorHandler()).excludePathPatterns("/**/login","/**/register","/**/register_verify","/**/upload").excludePathPatterns("/doc.html");
+        registry.addInterceptor(authInterceptorHandler()).excludePathPatterns("/**/login","/**/register","/**/register_verify").excludePathPatterns("/doc.html").excludePathPatterns("/api/file/upload")
+        ;
     }
 
     @Bean

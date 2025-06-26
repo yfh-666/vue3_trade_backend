@@ -1,6 +1,8 @@
 package com.xiaobaitiao.springbootinit.common;
 
 
+import com.xiaobaitiao.springbootinit.model.entity.User;
+import com.xiaobaitiao.springbootinit.model.vo.LoginUserVO;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -30,19 +32,28 @@ public class JwtKit {
      * @param  user 自定义要存储的用户对象信息
      * @return string(Token)
      */
-    public  <T> String generateToken(T user) {
-        Map<String, Object> claims = new HashMap<String, Object>(10);
-        claims.put("username", user.toString());
+    public <T> String generateToken(T user) {
+        Map<String, Object> claims = new HashMap<>(10);
+
+        if (user instanceof User) {
+            claims.put("id", ((User) user).getId());
+            claims.put("username", ((User) user).getUserName());
+        } else if (user instanceof LoginUserVO) {
+            claims.put("id", ((LoginUserVO) user).getId());  // ✅ 多加这一层也行
+            claims.put("username", ((LoginUserVO) user).getUserName());
+        } else {
+            claims.put("id", user.toString()); // ❌ 这行用于调试，正常不推荐 fallback 成字符串
+        }
+
         claims.put("createdate", new Date());
-        claims.put("id", System.currentTimeMillis());
-        // 要存储的数据
-        return Jwts.builder().addClaims(claims)
-                // 过期时间
+
+        return Jwts.builder()
+                .addClaims(claims)
                 .setExpiration(new Date(System.currentTimeMillis() + jwtProperties.getExpiration()))
-                // 加密算法和密钥
                 .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
-                .compact(); // 打包返回 3部分
+                .compact();
     }
+
 
     public JwtKit() {
     }
